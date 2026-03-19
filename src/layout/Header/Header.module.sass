@@ -1,0 +1,54 @@
+.header
+    position: sticky
+    top: 0
+    z-index: 100
+    display: flex
+    align-items: center
+    justify-content: space-between
+    gap: 24px
+    height: var(--header-height)
+    padding: 0 32px
+    background-color: rgba(247, 245, 239, 0.85)
+
+    :global(body.dark) &
+        background-color: rgba(15, 15, 19, 0.85)
+    border-bottom: 1px solid var(--border)
+    backdrop-filter: blur(12px)
+    transition: background-color 0.3s ease, border-color 0.3s ease
+
+    &__title
+        font-family: 'Bagel Fat One', cursive
+
+    ul
+        display: flex
+        align-items: center
+        gap: 4px
+
+        li a
+            display: block
+            padding: 6px 12px
+            font-size: 0.85rem
+            font-weight: 500
+            color: var(--text-muted)
+            border-radius: var(--radius)
+            transition: color var(--transition), background-color var(--transition)
+
+            &:hover
+                color: var(--text)
+                background-color: var(--surface-2)
+
+    .hamburger
+        padding: 6px 14px
+        font-size: 0.8rem
+        background-color: transparent
+        border-color: var(--border)
+        color: var(--text-muted)
+
+        &:hover
+            background-color: var(--surface-2)
+            border-color: var(--border)
+            color: var(--text)
+
+    .is-open
+        color: var(--primary)
+        border-color: var(--primary)

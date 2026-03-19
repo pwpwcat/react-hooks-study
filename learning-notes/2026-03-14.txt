@@ -1,0 +1,226 @@
+## Q. todos.filter((_, i) => i !== index) の意味がわからない / 特に i !== index がわからない
+
+filter は「残したいものに true を返す」関数。
+
+例: index=1（洗濯する）を削除したい場合
+
+```
+index: 0  → '買い物する'
+index: 1  → '洗濯する'   ← 削除したい
+index: 2  → '勉強する'
+```
+
+filter((_, i) => i !== 1) を実行すると：
+
+```
+i=0: 0 !== 1 → true  → 残す
+i=1: 1 !== 1 → false → 捨てる  ← 削除される
+i=2: 2 !== 1 → true  → 残す
+
+結果: ['買い物する', '勉強する']
+```
+
+つまり i !== index は「削除したいindex以外を残す」という条件。
+
+---
+
+## Q. なぜ false だったら捨てる なのか？
+
+filter の設計が「残したいものに true を返す」という仕様だから。
+
+```
+true  → 残す
+false → 捨てる
+```
+
+「削除」という操作でも、filter の視点は「何を残すか」で考える。
+
+**覚え方：** 「filter は残したいものを選ぶ関数」
+
+最初は丸ごと覚えてしまってOK：
+
+```js
+// index番目を削除する
+todos.filter((_, i) => i !== index)
+```
+
+理屈は後からついてくる。パターンの暗記から始めてOK。
+
+---
+
+## Q. 追加後に input をリセットしたい
+
+input に `value={text}` をつけている場合、`setText('')` するだけで input もリセットされる。
+DOM を直接触る（document.getElementById など）必要はない。
+
+**NG な書き方**
+
+```tsx
+const handleTextReset = () => {
+    const inputText = document.getElementById('textInput')
+    inputText.value = ''  // Reactの管理外なので使わない
+}
+```
+
+**正しい書き方**
+
+```tsx
+const handleAdd = () => {
+    setTodos([...todos, text])
+    setText('')  // これだけで input もリセットされる
+}
+```
+
+---
+
+## Q. onClick で複数の関数を実行したい
+
+`() => ({})` はオブジェクトを返す書き方なので NG。複数処理を実行するときは `{}` を使う。
+
+**NG**
+
+```tsx
+onClick={() => ({
+    handleA()
+    handleB()
+})}
+```
+
+**OK**
+
+```tsx
+onClick={() => {
+    handleA()
+    handleB()
+}}
+```
+
+---
+
+## Q. 全て削除する機能
+
+空配列をセットするだけでOK。
+
+```tsx
+<button onClick={() => setTodos([])}>全て削除</button>
+```
+
+---
+
+## コードをシンプルに保つコツ
+
+1つの関数からしか呼ばれない関数は、まとめてしまう。
+
+**まとめる前**
+
+```tsx
+const handleTextInput = () => {
+    setTodos([...todos, text])
+}
+const handleAdd = () => {
+    handleTextInput()
+    setText('')
+}
+```
+
+**まとめた後**
+
+```tsx
+const handleAdd = () => {
+    setTodos([...todos, text])
+    setText('')
+}
+```
+
+---
+
+## useContext とは
+
+登場人物は3つ：
+
+- ① `createContext` → 「共有する箱」を作る
+- ② `Provider` → 「この箱をここから下に配る」
+- ③ `useContext` → 「箱から取り出す」
+
+```
+App.tsx
+└── TodoProvider（② 配る）
+     ├── Header
+     ├── Todo（③ 取り出せる）
+     └── About（③ 取り出せる）
+
+TodoContext.tsx（① 箱を作る）
+```
+
+**一言でいうと：**
+「Provider で囲んだコンポーネントなら、どこからでも useContext で値が取れる」
+
+| | 管理範囲 | ページ離脱後 |
+|---|---|---|
+| useState | そのコンポーネント内のみ | リセットされる |
+| useContext | Provider 内の全コンポーネント | 保持される |
+
+---
+
+## useContext 実装手順
+
+**ステップ1: Context を作る（TodoContext.tsx）**
+
+```tsx
+import { createContext, useState } from 'react'
+
+type TodoContextType = {
+    todos: string[]
+    setTodos: React.Dispatch<React.SetStateAction<string[]>>
+}
+
+// 箱を作る（初期値と型を指定する）
+export const TodoContext = createContext<TodoContextType>({
+    todos: [],
+    setTodos: () => {},
+})
+
+// Provider を作る（state をここで管理する）
+export const TodoProvider = ({ children }) => {
+    const [todos, setTodos] = useState<string[]>([])
+    return (
+        <TodoContext.Provider value={{ todos, setTodos }}>
+            {children}
+        </TodoContext.Provider>
+    )
+}
+```
+
+**ステップ2: Provider で囲む（App.tsx）**
+
+```tsx
+import { TodoProvider } from '@/context/TodoContext'  // {} を忘れずに
+
+const App = () => {
+    return (
+        <TodoProvider>
+            <BrowserRouter>
+                ...
+            </BrowserRouter>
+        </TodoProvider>
+    )
+}
+```
+
+**ステップ3: useContext で取り出す（使いたいコンポーネント）**
+
+```tsx
+import { useContext } from 'react'
+import { TodoContext } from '@/context/TodoContext'
+
+const { todos, setTodos } = useContext(TodoContext)
+// あとは useState と同じように使える
+```
+
+---
+
+## useContext ハマったポイント
+
+- `createContext([])` だと型が `never[]` になりエラー → `createContext<TodoContextType>({...})` と型を明示する
+- `import TodoProvider from '...'` でエラー → `export const` なので `import { TodoProvider } from '...'` と `{}` が必要
+- `useState<String[]>` の `String` は大文字 NG → `string`（小文字）がプリミティブ型で正しい

@@ -1,0 +1,99 @@
+## API取得の基本パターン（useEffect + fetch）
+
+必要な state は3つ：
+
+```tsx
+type Todo = {
+    id: number
+    title: string
+    completed: boolean
+}
+
+const [todos, setTodos] = useState<Todo[]>([])    // データ
+const [isLoading, setIsLoading] = useState(false)  // 読み込み中か
+const [errorMessage, setErrorMessage] = useState('') // エラーメッセージ
+```
+
+fetch の書き方：
+
+```tsx
+useEffect(() => {
+    setIsLoading(true)
+    fetch('https://jsonplaceholder.typicode.com/todos')
+        .then((response) => response.json())  // JSONに変換
+        .then((data) => {
+            setTodos(data)       // stateに保存
+            setIsLoading(false)  // 読み込み完了
+        })
+        .catch((error) => {
+            setIsLoading(false)               // 読み込み完了
+            setErrorMessage('取得に失敗しました') // エラーメッセージ
+        })
+}, [])
+```
+
+JSX での表示：
+
+```tsx
+{errorMessage && <p>{errorMessage}</p>}  // エラーがあれば表示
+{isLoading ? (
+    '読み込み中...'
+) : (
+    <ul>
+        {todos.map((todo) => (
+            <li key={todo.id}>{todo.title}</li>
+        ))}
+    </ul>
+)}
+```
+
+---
+
+## .then() と .catch() とは
+
+`fetch` は非同期処理（結果が後から返ってくる）。
+
+- `.then()` → 成功したときの処理
+- `.catch()` → 失敗したときの処理
+
+```
+fetch(URL)
+    .then(成功したらここが実行される)
+    .catch(失敗したらここが実行される)
+```
+
+### .then() の引数はバケツリレー
+
+前の処理の結果が次の引数に渡ってくる。引数の名前は何でもOK。
+
+```tsx
+fetch(URL)
+    .then((response) => response.json())
+    // ↑ fetch の結果（サーバーの返答）が response に入ってくる
+
+    .then((data) => setTodos(data))
+    // ↑ response.json() の結果（JSON）が data に入ってくる
+
+    .catch((error) => setErrorMessage('失敗'))
+    // ↑ 失敗したときのエラー情報が error に入ってくる
+```
+
+---
+
+## && を使った条件付き表示
+
+```tsx
+{errorMessage && <p>{errorMessage}</p>}
+```
+
+- 左が truthy のときだけ右を表示する
+- 三項演算子の else がいらないときに使う
+
+JSでは bool 以外も truthy / falsy として評価される：
+
+| 値 | 評価 |
+|---|---|
+| `''`（空文字） | falsy（false扱い） |
+| `'文字列'` | truthy（true扱い） |
+| `0` | falsy |
+| `1` など | truthy |

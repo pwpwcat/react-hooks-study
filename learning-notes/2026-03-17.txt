@@ -1,0 +1,8 @@
+## setCount(count + 1) と setCount((prev) => prev + 1) の違い
+
+連続して更新するときは `prev` を使う。
+
+- `setCount(count + 1)` → 自分が記憶した古い値を使う（ズレる可能性がある）
+- `setCount((prev) => prev + 1)` → Reactが書くタイミングで最新の値を使う（安全）
+
+**お作法：連続して更新する処理（タイマーなど）は `prev` を使う**

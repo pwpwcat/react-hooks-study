@@ -1,0 +1,185 @@
+# React実装の考え方・手順
+
+**ステップ1: まず「何を管理するか」を考える**
+- 変化するデータは何か？を洗い出す
+- それぞれ useState で管理する
+
+**ステップ2: useState の型を決める**
+
+```tsx
+useState('')          // 文字列
+useState(0)           // 数値
+useState(false)       // 真偽値
+useState<string[]>([]) // 配列（TypeScriptでは型を明示する）
+```
+
+**ステップ3: UIを組む（JSX）**
+- 表示したい要素を書く
+- state を表示したい場所に `{変数名}` で埋め込む
+
+**ステップ4: イベントを繋げる**
+- ボタン → `onClick`
+- input → `onChange`
+- イベントが発生したら `setXxx()` で state を更新する
+
+---
+
+# 作ったもの
+
+## カウンター
+
+```tsx
+const [count, setCount] = useState(0)
+
+<button onClick={() => setCount(count + 1)}>+</button>
+<button onClick={() => setCount(Math.max(0, count - 1))}>-</button>
+// Math.max(0, count - 1) で0未満にならない
+```
+
+## useEffect
+
+依存配列の値が変わったときに処理を実行するフック。
+
+```tsx
+useEffect(() => {
+    // 処理
+}, [依存する値])
+```
+
+例: count が変わったら h1 のテキストを更新する
+
+```tsx
+useEffect(() => {
+    setTitle(count % 2 === 0 ? '偶数です' : '奇数です')
+}, [count])
+```
+
+## トグル（表示/非表示）
+
+```tsx
+const [isOpen, setIsOpen] = useState(false)
+
+onClick={() => setIsOpen(!isOpen)}  // ! で反転させる
+```
+
+CSSは data-active 属性で制御：
+
+```sass
+.nav
+  display: none
+  &[data-active="true"]
+    display: block
+```
+
+## テキスト入力フォーム
+
+```tsx
+const [text, setText] = useState('')
+
+<input
+    value={text}
+    onChange={(e) => setText(e.target.value)}
+/>
+// value と onChange はセットで書く（制御コンポーネント）
+```
+
+## TODOリスト
+
+```tsx
+const [text, setText] = useState('')           // 入力中のテキスト
+const [todos, setTodos] = useState<string[]>([]) // TODOの配列
+
+// 追加
+setTodos([...todos, text])
+
+// 表示
+todos.map((todo, index) => (...))
+
+// 削除
+setTodos(todos.filter((_, i) => i !== index))
+```
+
+---
+
+# 重要な概念まとめ
+
+## useState の仕組み
+
+```tsx
+const [値を読む用, 値を変える用] = useState(初期値)
+```
+
+- 値を変えるときは必ず `setXxx()` を使う
+- 直接代入は NG（Reactが変化を検知できない）
+
+## なぜ setXxx() が必要か
+
+`setXxx()` は以下の2つを同時にやってくれる：
+1. state を更新する
+2. React に再レンダリングを伝える
+
+直接書き換えても画面は更新されない。
+
+## スプレッド構文 `[...todos, text]`
+
+新しい配列を作る書き方。`todos.push()` は NG（同じ配列のまま → Reactが変化に気づかない）。
+
+スプレッド構文を使わない場合（同じ意味）：
+
+```js
+const newTodos = []
+for (let i = 0; i < todos.length; i++) {
+    newTodos.push(todos[i])  // 既存の要素を1つずつ追加
+}
+newTodos.push(text)          // 新しい要素を追加
+setTodos(newTodos)
+```
+
+スプレッド構文を使った場合（上と同じ意味、短く書ける）：
+
+```js
+setTodos([...todos, text])
+```
+
+## map()
+
+```tsx
+todos.map((todo, index) => (
+    <li key={index}>{todo}</li>
+))
+// (値, index) の2つの引数が使える
+// index は何番目かを表す
+```
+
+## filter()
+
+```js
+todos.filter((_, i) => i !== index)
+// index 番目以外を残す
+// _ は「この引数は使わない」という慣習的な書き方
+```
+
+## CSS Modules の使い方
+
+```tsx
+import styles from './index.module.sass'  // default import
+
+<div className={styles.nav}>  // styles.クラス名 で指定
+```
+
+---
+
+# JS が苦手な場合の学習アドバイス
+
+1. **「動かなかった」体験を大事にする** — エラーや動かない理由を理解することが一番の近道
+2. **「なぜこれが必要か」を毎回言語化する** — 仕組みを理解すると次に自然と思い出せる
+3. **同じものを何度も作る** — カウンター、フォーム、TODOを繰り返し作ると体に染み込む
+4. **「思い出せない」を気にしない** — プロでも毎回調べる。調べながら手を動かすことが大事
+
+---
+
+# 次にやること
+
+- [ ] useContext（複数コンポーネントで state を共有する）
+- [ ] タイマー（useEffect + setInterval の組み合わせ）
+- [ ] Redux（useContext の次のステップ）

@@ -1,0 +1,112 @@
+## フォームバリデーション
+
+### 基本：空のとき追加させない（早期リターン）
+
+```tsx
+const handleAdd = () => {
+    if (text === '') return  // ここで終了、以降の処理は実行されない
+    setTodos([...todos, text])
+    setText('')
+}
+```
+
+### エラーメッセージを表示する
+
+```tsx
+const [error, setError] = useState('')
+
+const handleAdd = () => {
+    if (text === '') {
+        setError('テキストを入力してください')
+        return
+    }
+    setTodos([...todos, text])
+    setText('')
+}
+```
+
+```tsx
+<p className={styles.todo__error}>{error}</p>
+```
+
+### 入力したらエラーを消す（onChange に追加）
+
+```tsx
+onChange={(e) => {
+    setText(e.target.value)
+    setError('')  // 入力のたびにエラーをリセット
+}}
+```
+
+### ポイント
+
+- `setError` に渡すのは**文字列だけ**。HTMLタグは入れられない
+- スタイルは className で当てる
+- `useState` は `[]`、`useContext` は `{}` で分解する
+
+---
+
+## setInterval の書き方
+
+`setInterval` の第1引数は「後で実行する関数」を渡す必要がある。
+
+**NG：すぐ実行されてしまう**
+
+```tsx
+setInterval(setCount(count + 1), 1000)
+// setCount(count + 1) が即実行され、戻り値（undefined）が渡される
+// → setInterval(undefined, 1000) と同じになり何も繰り返されない
+```
+
+**OK：関数として渡す**
+
+```tsx
+setInterval(() => {
+    setCount(count + 1)
+}, 1000)
+// () => をつけることで「後で実行する関数」として渡せる
+```
+
+`onClick` と同じ感覚で、`setInterval` の中は必ず `() =>` をつける。
+
+---
+
+## タイマー（useEffect + setInterval）
+
+```tsx
+const [count, setCount] = useState(0)
+const [isRunning, setIsRunning] = useState(false)
+
+useEffect(() => {
+    if (!isRunning) return  // 止まっているときは何もしない
+
+    const timer = setInterval(() => {
+        setCount((prev) => prev + 1)  // 1秒ごとに+1
+    }, 1000)
+
+    return () => clearInterval(timer)  // クリーンアップ関数
+}, [isRunning])
+```
+
+### クリーンアップ関数とは
+
+`useEffect` の `return` で返す関数。useEffect が終わるときに実行される。
+タイマーを止め忘れるとメモリリークになるので必須。
+
+```tsx
+return () => clearInterval(timer)  // タイマーを止める
+```
+
+---
+
+## setCount(count + 1) と setCount((prev) => prev + 1) の違い
+
+- `count` → useEffect が実行された時点で記憶した古い値
+- `prev` → React が今持っている最新の値
+
+```tsx
+setCount(count + 1)           // 古い値に+1（タイマーなど連続更新では壊れる）
+setCount((prev) => prev + 1)  // 最新の値に+1（安全）
+```
+
+**パターンとして覚える：タイマーや連続更新のときは `prev` を使う**

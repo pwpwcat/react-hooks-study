@@ -1,0 +1,43 @@
+.nav
+    display: none
+
+    &[data-active="true"]
+        display: block
+
+.timer
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: center
+    gap: 32px
+    min-height: calc(100vh - var(--header-height) - 60px)
+
+    &__count
+        font-size: 6rem
+        font-weight: 700
+        letter-spacing: -0.04em
+        color: var(--text)
+        line-height: 1
+        min-width: 3ch
+        text-align: center
+
+    &__buttons
+        display: flex
+        gap: 12px
+
+    &__toggle
+        padding: 10px 32px
+        font-size: 0.95rem
+
+    &__reset
+        padding: 10px 24px
+        font-size: 0.95rem
+
+.disable
+    opacity: 0.3
+    cursor: not-allowed
+
+    &:hover
+        background-color: var(--surface-2)
+        border-color: var(--border)
+        color: var(--text)

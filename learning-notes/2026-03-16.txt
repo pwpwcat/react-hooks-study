@@ -1,0 +1,162 @@
+## Q. clearInterval とは何か？ストップボタンの処理？
+
+ストップボタンの処理ではない。`setInterval` で動かしたタイマーを止める関数。
+
+`useEffect` のクリーンアップ関数の中で使う。
+
+```tsx
+useEffect(() => {
+    if (!isRunning) return
+
+    const timer = setInterval(() => {
+        setCount((prev) => prev + 1)
+    }, 1000)
+
+    return () => clearInterval(timer)  // ← クリーンアップ関数
+}, [isRunning])
+```
+
+### 呼ばれるタイミング
+
+- `isRunning` が `false → true` → useEffect が動く → タイマー開始
+- `isRunning` が `true → false` → useEffect が再実行される**前**に前のタイマーを止める → `clearInterval` が呼ばれる
+
+「前に動かしたタイマーをきれいに片付けてから次へ」という役割。
+
+---
+
+## Q. createContext の初期値と useState の初期値の違いは？
+
+```tsx
+// createContext の初期値
+export const ThemeContext = createContext<ThemeContextType>({
+    isDark: false,       // ← 保険の初期値
+    setIsDark: () => {},
+})
+
+// useState の初期値
+const [isDark, setIsDark] = useState(false)  // ← 本物の初期値
+```
+
+| | 役割 | 使われるタイミング |
+|---|---|---|
+| `createContext` の初期値 | 保険 | Provider で囲まれていないときだけ |
+| `useState` の初期値 | 本物 | 実際に Provider の中で使われる |
+
+Provider で囲めば `createContext` の初期値はほぼ使われない。TypeScript のエラーを防ぐために書く。
+
+---
+
+## Q. Provider で囲まないと useContext は使えない？
+
+使えるが、`createContext` の初期値が使われる。
+`setIsDark: () => {}` は何もしない空の関数なので、呼んでも何も起きない。
+→ 実質 **Provider で囲まないと正しく動かない**。
+
+---
+
+
+## Q. useContext を App.tsx で使ったら動かなかった理由
+
+`App` の JSX の中に `ThemeProvider` を書いても、`App` 自身は Provider の外にいる。
+
+```
+App（← Provider の外）
+└── ThemeProvider（← ここから中が Provider の範囲）
+     └── Header、Todo など
+```
+
+`App` は `ThemeProvider` の親なので、自分が生み出したものには囲まれない。
+
+**解決策：** `useEffect` を `ThemeProvider` の中に移す
+
+```tsx
+export const ThemeProvider = ({ children }) => {
+    const [isDark, setIsDark] = useState(false)
+
+    useEffect(() => {
+        const body = document.querySelector('body')
+        if (isDark) {
+            body.classList.add('dark')
+        } else {
+            body.classList.remove('dark')
+        }
+    }, [isDark])
+
+    return (
+        <ThemeContext.Provider value={{ isDark, setIsDark }}>
+            {children}
+        </ThemeContext.Provider>
+    )
+}
+```
+
+**覚え方：** `useContext` は Provider の範囲の中でしか使えない
+
+---
+
+## Q. `'body' は 'null' の可能性があります` エラー
+
+`document.querySelector()` は要素が見つからない場合 `null` を返す可能性があるため TypeScript が警告する。
+
+早期リターンで対処：
+
+```tsx
+const body = document.querySelector('body')
+if (!body) return
+if (isDark) {
+    body.classList.add('dark')
+} else {
+    body.classList.remove('dark')
+}
+```
+
+---
+
+## カスタムフック
+
+コンポーネントからロジックを切り出して再利用できるようにしたもの。`useXxx` という名前で作る。
+
+### 作り方（src/hooks/useTimer.ts）
+
+```ts
+import { useEffect, useState } from 'react'
+
+export const useTimer = () => {
+    const [count, setCount] = useState(0)
+    const [isRunning, setIsRunning] = useState(false)
+
+    useEffect(() => {
+        if (!isRunning) return
+        const timer = setInterval(() => {
+            setCount((prev) => prev + 1)
+        }, 1000)
+        return () => clearInterval(timer)
+    }, [isRunning])
+
+    const handleReset = () => {
+        if (isRunning) return
+        setCount(0)
+    }
+
+    // コンポーネントで使うものを return する
+    return { count, isRunning, setIsRunning, handleReset }
+}
+```
+
+### 使い方（コンポーネント側）
+
+```tsx
+import { useTimer } from '@/hooks/useTimer'
+
+const Home = () => {
+    const { count, isRunning, setIsRunning, handleReset } = useTimer()
+    // あとは普通に使える
+}
+```
+
+### ポイント
+
+- `useTimer()` は1回だけ呼ぶ。複数回呼ぶと別々のタイマーが生まれてしまう
+- 初期値は `useTimer` の中の `useState` で設定するので引数は不要
+- `export const` なので import は `{}` をつける

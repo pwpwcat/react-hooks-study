@@ -1,0 +1,112 @@
+## useRef FAQ
+
+### Q. useRef って何？useState と何が違うの？
+`useState` は値が変わるたびに再レンダリングされる。
+`useRef` は値が変わっても再レンダリングされない。
+
+主な使い方は2つ：
+1. **DOMを直接操作する**（inputにフォーカスを当てるなど）
+2. **再レンダリングしない値を保持する**（setIntervalのIDなど）
+
+---
+
+### Q. どんなウェブアプリで使われてるの？
+- 検索バー → ページを開いた瞬間に自動でカーソルが当たってる（Googleなど）
+- モーダル → 開いたらすぐ入力できる状態になってる
+- ログインフォーム → ページ開いたらすぐusernameに入力できる
+
+---
+
+### Q. 書き方は useState と同じ？
+ほぼ同じ。違いは配列じゃなくて1つの変数で受け取るところ。
+
+```tsx
+useState → const [value, setValue] = useState()
+useRef   → const ref = useRef()
+```
+
+---
+
+### Q. 型はどう書くの？
+参照するDOM要素の型を指定する。inputなら `HTMLInputElement`。
+
+```tsx
+const ref = useRef<HTMLInputElement>(null)
+```
+
+`null` は「最初はまだ何も参照していない」という初期値。
+
+---
+
+### Q. `ref.current` に型エラーが出る
+`null` で初期化しているので「nullの可能性がある」とTypeScriptに言われる。
+`?.`（オプショナルチェーン）を使うと「nullじゃなかったら実行する」になる。
+
+```tsx
+ref.current?.focus()  // nullだったら何もしない
+```
+
+---
+
+### Q. ref.current って何？なぜ `.current` が必要？
+`useRef` が返すのはオブジェクトで、値は必ず `current` の中に入っている。
+
+```ts
+ref = { current: null }  // こういう構造
+
+ref.current = timer  // 値を保存
+ref.current          // 値を取り出す
+```
+
+`useState` の `[value, setValue]` のように、決まった形。
+
+---
+
+### Q. useRef で setInterval のIDを保存する使い方
+`setInterval` は実行するとID（数値）を返す。そのIDを `useRef` に保存しておくと、`useEffect` の外からでも `clearInterval` でタイマーを止められる。
+
+```ts
+const timerRef = useRef<number | null>(null)
+
+useEffect(() => {
+    if (!isRunning) return
+    const timer = setInterval(() => {
+        setCount((prev) => prev + 1)
+    }, 1000)
+    timerRef.current = timer  // ← IDを保存
+
+    return () => clearInterval(timer)
+}, [isRunning])
+
+const handleReset = () => {
+    clearInterval(timerRef.current)  // ← useEffectの外からでも止められる
+    setIsRunning(false)
+    setCount(0)
+}
+```
+
+---
+
+## API取得復習で詰まったポイント
+
+### isLoading の切り替えタイミング
+
+fetch の**前**に `true`、取得**後**に `false` にする。
+
+```tsx
+useEffect(() => {
+    setIsLoading(true)  // ← fetch の前
+    fetch(URL)
+        .then((response) => response.json())
+        .then((data) => {
+            setTodos(data)
+            setIsLoading(false)  // ← 取得できたら false
+        })
+        .catch((error) => {
+            setIsLoading(false)  // ← エラーのときも false
+            setErrorMessage('APIの取得に失敗しました')
+        })
+}, [])
+```
+
+fetch は非同期なので、`.then()` の外に `setIsLoading(false)` を書くと先に実行されてしまう。
