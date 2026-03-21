@@ -116,6 +116,28 @@
         input
             flex: 1
 
+.form
+    display: flex
+    flex-direction: column
+    gap: 20px
+
+    &__field
+        display: flex
+        flex-direction: column
+        gap: 6px
+
+        label
+            font-size: 0.85rem
+            color: var(--text-muted)
+
+    &__error
+        font-size: 0.8rem
+        color: var(--danger)
+
+    &__success
+        font-size: 0.9rem
+        color: var(--primary)
+
 .error
     color: var(--danger)
     font-size: 0.9rem

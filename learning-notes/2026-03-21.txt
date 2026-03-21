@@ -1,0 +1,77 @@
+## 今日やったこと
+
+- フォーム（オブジェクトstate）を何も見ずに再実装
+- フォームに以下の機能を追加実装
+  - 送信成功時にフォームをリセット
+  - 送信成功メッセージを3秒後に自動消去（フェードアニメーション付き）
+  - リセットボタン
+  - 名前inputの文字数カウント + maxLength制限
+- FormSection.tsx を作成して Study ページに組み込み
+
+---
+
+## パフォーマンスについての疑問
+
+### Q. エラーがない場合も `setErrors` が実行されるのは無駄では？
+
+問題ない。理由：
+
+- `setErrors` はオブジェクトを更新するだけなので処理は一瞬
+- Reactは「前回と同じ値なら再レンダリングしない」最適化をしている
+
+気にすべきケースはこういうもの：
+- APIを叩く処理
+- 重い計算
+- 大量のデータを操作する処理
+
+`setErrors` 程度のオブジェクト更新はパフォーマンス的に問題なし。
+
+**「何でも最適化しようとすると逆に読みにくいコードになる」** こともある。シンプルで読みやすい方を優先してOK。
+
+---
+
+## e.target.value とは？
+
+```ts
+onChange={(e) => setForm({ ...form, name: e.target.value })}
+```
+
+- `e` → inputに何か入力されたときの情報が全部入っているオブジェクト（種類、属性、入力値など）
+- `e.target` → 操作されたinput要素そのもの
+- `e.target.value` → そのinputに入力された文字列
+
+今まで書いてきた `onChange={(e) => setText(e.target.value)}` も同じ仕組み。
+
+---
+
+## フォームの追加機能
+
+### リセットボタン
+`onClick` で `setForms` と `setErrors` を両方初期値に戻すだけ。
+
+```tsx
+<button onClick={() => {
+    setForms({ name: '', email: '' })
+    setErrors({ name: '', email: '' })
+}}>
+    リセット
+</button>
+```
+
+---
+
+### 文字数カウント + maxLength
+
+```tsx
+<input
+    type="text"
+    value={forms.name}
+    maxLength={10}
+    onChange={(e) => setForms({ ...forms, name: e.target.value })}
+/>
+<p>{forms.name.length} / 10文字</p>
+```
+
+`forms.name.length` で現在の文字数が取れる。
+
+**注意：** `maxLength` は日本語（IME）入力中は制限が効かないことがある。そのため `forms.name.length >= 10` でエラーチェックを別途書く必要がある場合もある。

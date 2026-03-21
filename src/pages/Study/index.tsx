@@ -3,6 +3,7 @@ import TodoSection from './components/TodoSection'
 import TimerSection from './components/TimerSection'
 import ApiSection from './components/ApiSection'
 import RefSection from './components/RefSection'
+import FormSection from './components/FormSection'
 
 const Study = () => {
     return (
@@ -22,6 +23,7 @@ const Study = () => {
                 </p>
             </div>
             <RefSection />
+            <FormSection />
             <TodoSection />
             <TimerSection />
             <ApiSection />

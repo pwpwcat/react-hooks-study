@@ -1,53 +1,56 @@
 import styles from './index.module.sass'
 import { useEffect, useState, useRef } from 'react'
 const Home = () => {
-    const [form, setForm] = useState({ name: '', email: '', age: '' })
-    const [errors, setErrors] = useState({ name: '', email: '', age: '' })
+    const [forms, setForms] = useState({ name: '', email: '' })
+    const [errors, setErrors] = useState({ name: '', email: '' })
+    const [isSuccess, setIsSuccess] = useState(false)
 
     const handleSubmit = () => {
         setErrors({
-            name: form.name === '' ? '名前を入力してください' : '',
-            email: form.email === '' ? 'メールアドレスを入力してください' : '',
-            age: form.age === '' ? '年齢を入力してください' : '',
+            name: forms.name === '' ? 'エラーです' : '',
+            email: forms.email === '' ? 'エラーです' : '',
         })
-        if (form.name !== '' && form.email !== '' && form.age !== '') {
-            console.log(
-                `名前：${form.name}、メアド：${form.email}、年齢：${form.age}`,
-            )
+        if (forms.name !== '' && forms.email !== '') {
+            setIsSuccess(true)
+            setForms({
+                name: '',
+                email: '',
+            })
+            setTimeout(() => {
+                setIsSuccess(false)
+            }, 3000)
         }
     }
     return (
         <div>
             <div>
                 <p>{errors.name}</p>
-                <label htmlFor="name">name</label>
+                <label htmlFor="">名前</label>
                 <input
                     type="text"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                />
-            </div>
-            <div>
-                <p>{errors.email}</p>
-                <label htmlFor="email">email</label>
-                <input
-                    type="text"
-                    value={form.email}
+                    value={forms.name}
                     onChange={(e) =>
-                        setForm({ ...form, email: e.target.value })
+                        setForms({ ...forms, name: e.target.value })
                     }
                 />
             </div>
             <div>
-                <p>{errors.age}</p>
-                <label htmlFor="age">age</label>
+                <p>{errors.email}</p>
+                <label htmlFor="">メールアドレス</label>
                 <input
                     type="text"
-                    value={form.age}
-                    onChange={(e) => setForm({ ...form, age: e.target.value })}
+                    value={forms.email}
+                    onChange={(e) =>
+                        setForms({ ...forms, email: e.target.value })
+                    }
                 />
             </div>
             <button onClick={() => handleSubmit()}>submit</button>
+            <div
+                className={`${styles.success} ${isSuccess ? styles.show : ''}`}
+            >
+                送信しました！
+            </div>
         </div>
     )
 }
