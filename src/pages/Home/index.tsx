@@ -1,56 +1,44 @@
 import styles from './index.module.sass'
 import { useEffect, useState, useRef } from 'react'
 const Home = () => {
-    const [forms, setForms] = useState({ name: '', email: '' })
-    const [errors, setErrors] = useState({ name: '', email: '' })
-    const [isSuccess, setIsSuccess] = useState(false)
-
-    const handleSubmit = () => {
-        setErrors({
-            name: forms.name === '' ? 'エラーです' : '',
-            email: forms.email === '' ? 'エラーです' : '',
-        })
-        if (forms.name !== '' && forms.email !== '') {
-            setIsSuccess(true)
-            setForms({
-                name: '',
-                email: '',
-            })
-            setTimeout(() => {
-                setIsSuccess(false)
-            }, 3000)
-        }
-    }
+    const [search, setSearch] = useState('')
+    const products = [
+        { id: 1, name: 'Tシャツ' },
+        { id: 2, name: 'ジーンズ' },
+        { id: 3, name: 'パーカー' },
+        { id: 4, name: 'スニーカー' },
+        { id: 5, name: 'キャップ' },
+        { id: 6, name: 'ジャケット' },
+    ]
+    const result = products.filter((product) =>
+        product.name.toLowerCase().includes(search.toLowerCase()),
+    )
     return (
         <div>
-            <div>
-                <p>{errors.name}</p>
-                <label htmlFor="">名前</label>
-                <input
-                    type="text"
-                    value={forms.name}
-                    onChange={(e) =>
-                        setForms({ ...forms, name: e.target.value })
-                    }
-                />
-            </div>
-            <div>
-                <p>{errors.email}</p>
-                <label htmlFor="">メールアドレス</label>
-                <input
-                    type="text"
-                    value={forms.email}
-                    onChange={(e) =>
-                        setForms({ ...forms, email: e.target.value })
-                    }
-                />
-            </div>
-            <button onClick={() => handleSubmit()}>submit</button>
-            <div
-                className={`${styles.success} ${isSuccess ? styles.show : ''}`}
-            >
-                送信しました！
-            </div>
+            <h1>練習</h1>
+            <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && <p>{result.length}件見つかりました</p>}
+            <ul>
+                {result.map((product) => (
+                    <li key={product.id}>
+                        {product.name.split(search).map((part, index) => (
+                            <>
+                                {part}
+                                {index <
+                                    product.name.split(search).length - 1 && (
+                                    <span style={{ color: 'red' }}>
+                                        {search}
+                                    </span>
+                                )}
+                            </>
+                        ))}
+                    </li>
+                ))}
+            </ul>
         </div>
     )
 }

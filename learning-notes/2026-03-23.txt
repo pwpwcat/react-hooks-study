@@ -1,0 +1,107 @@
+## 今日やったこと
+
+- 検索フィルターを実装（useState + filter + includes）
+- 大文字小文字を区別しない検索（toLowerCase）
+- 件数表示（result.length）
+
+---
+
+## 検索フィルターの基本パターン
+
+```tsx
+const [search, setSearch] = useState('')
+
+const result = products.filter((product) =>
+    product.name.toLowerCase().includes(search.toLowerCase())
+)
+
+<input
+    type="text"
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+/>
+<ul>
+    {result.map((product) => (
+        <li key={product.id}>{product.name}</li>
+    ))}
+</ul>
+```
+
+---
+
+## Q. 検索ワードが空のとき全件表示されるのはなぜ？
+
+`includes('')` は**必ず `true` を返す**というJavaScriptの仕様のため。
+
+```ts
+'Tシャツ'.includes('')   // → true
+'ジーンズ'.includes('')  // → true
+```
+
+「空文字はすべての文字列に含まれている」という考え方。なので `search` が空のとき、全件が `filter` を通過して全件表示になる。
+
+---
+
+## Q. 大文字小文字を区別しない検索にするには？
+
+`toLowerCase()` で両方を小文字に変換してから比較する。
+
+```ts
+product.name.toLowerCase().includes(search.toLowerCase())
+```
+
+---
+
+## ハイライト表示
+
+検索ワードにマッチした文字を色付きで表示する。
+
+```tsx
+{product.name.split(search).map((part, index) => (
+    // split(search) で検索ワードを区切りに分割（検索ワード自体は消える）
+    // 例：'パーカー'.split('パ') → ['', 'ーカー']
+    // map で1個ずつ処理。part=各要素, index=番号
+
+    <>
+        {part}
+        {/* まず part を表示（パの前の文字列、またはパの後の文字列） */}
+
+        {index < product.name.split(search).length - 1 && (
+            // index が「最後の要素より前」のときだけ true
+            // → 参照してる文字の番号がパの位置より前だったら、その後ろにパを表示する
+            // → 最後の要素の後ろには表示しない（余分なパが付いてしまうため）
+
+            <span style={{ color: 'red' }}>{search}</span>
+            // 消えた検索ワード（パ）を span で補って赤くする
+        )}
+    </>
+))}
+```
+
+**処理の流れ（例：「パ」で検索）**
+```
+① split → ['', 'ーカー']
+
+② mapで処理：
+  1回目（part='', index=0）
+    → '' を表示
+    → index(0) < length-1(1) = true → <span>パ</span> を表示
+
+  2回目（part='ーカー', index=1）
+    → 'ーカー' を表示
+    → index(1) < length-1(1) = false → spanなし
+
+③ 左から順に並ぶ → '' + パ + ーカー = パーカー（パだけ赤）
+```
+
+**注意：** `toLowerCase()` と組み合わせると元の文字が小文字で表示されてしまうため、今の段階では併用が難しい。
+
+---
+
+## 件数表示
+
+`result.length` で絞り込み後の件数が取れる。検索中だけ表示する場合は `&&` で制御。
+
+```tsx
+{search && <p>{result.length}件見つかりました</p>}
+```

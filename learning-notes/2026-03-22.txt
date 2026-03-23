@@ -1,0 +1,79 @@
+## 今日やったこと
+
+- 配列操作の反復練習（filter / reduce / map の組み合わせ）
+- オブジェクトの配列を使った実務よりの問題を4問解いた
+- microCMSを使ったブログ実装の準備（.env / .gitignore の設定）
+
+---
+
+## filter
+
+### 基本パターン
+条件に合うものだけ取り出す。
+
+```ts
+const fruits = ['apple', 'banana', 'cherry', 'date', 'elderberry']
+const result = fruits.filter((fruit) => fruit.length >= 5)
+// → ['apple', 'banana', 'cherry', 'elderberry']
+```
+
+---
+
+## reduce
+
+### 一言でいうと
+全要素をまとめて**1つの値にする**。合計・最大値・オブジェクト変換など。
+
+```ts
+const numbers = [15, 42, 23]
+const total = numbers.reduce((sum, num) => sum + num, 0)
+// → 80
+```
+
+- 第1引数：`(sum, num)` → 処理（前回の結果 + 今の要素）
+- 第2引数：`0` → `sum` の初期値
+
+**動き：**
+```
+1回目：sum=0,  num=15 → 0+15  = 15
+2回目：sum=15, num=42 → 15+42 = 57
+3回目：sum=57, num=23 → 57+23 = 80
+```
+
+`map` / `filter` は「全要素に何かをする」、`reduce` は「全要素をまとめて1つにする」。
+
+---
+
+## filter + map の組み合わせ（実務頻出）
+
+オブジェクトの配列から条件で絞り込んで、特定のプロパティだけ表示する。
+
+```tsx
+const users = [
+    { id: 1, name: '田中', age: 28, active: true },
+    { id: 2, name: '佐藤', age: 34, active: false },
+    ...
+]
+
+const active = users.filter((user) => user.active)
+
+<ul>
+    {active.map((user) => (
+        <li key={user.id}>{user.name}</li>
+    ))}
+</ul>
+```
+
+---
+
+## key とは？
+
+`map` でリスト表示するとき、各要素に `key` を付ける必要がある。
+
+```tsx
+<li key={user.id}>{user.name}</li>
+```
+
+**なぜ必要か：** Reactが「どの要素が変わったか・消えたか」を正確に判断するため。`key` がないと削除・並び替え時に意図しない表示バグが起きることがある。
+
+実務では `id` を `key` にするのが基本。
