@@ -1,0 +1,134 @@
+## 今日やったこと
+
+- microCMS + microcms-js-sdk を使ったブログ一覧の取得実装
+- Blog ページの作成・ルーティング追加
+- ブログ詳細ページ（BlogShow）の作成・1件取得の実装
+- `useParams` でURLのidを取得して記事を表示するところまで完成
+
+---
+
+## microCMS でのデータ取得
+
+### fetch との違い
+`fetch` は `.then((response) => response.json())` でJSON変換が必要だったが、`client.get()` は最初からJSON変換してくれる。
+
+```ts
+// fetchの場合
+fetch(url)
+    .then((response) => response.json())
+    .then((data) => { ... })
+
+// client.get()の場合
+client.get({ endpoint: 'blog' })
+    .then((response) => { ... })  // すでにJSONになっている
+```
+
+---
+
+### Q. レスポンスの `contents` ってどこからわかるの？
+
+microCMSのリスト形式APIは必ずこういう構造で返ってくる（仕様）：
+
+```ts
+{
+    contents: [...],  // 記事の配列
+    totalCount: 10,
+    offset: 0,
+    limit: 10,
+}
+```
+
+使うAPIのレスポンス構造はドキュメントで確認するのが基本。
+
+---
+
+### 基本パターン
+
+```ts
+useEffect(() => {
+    setIsLoading(true)  // ← client.get()を呼ぶ前にtrue
+    client
+        .get({ endpoint: 'blog' })
+        .then((response) => {
+            setBlogs(response.contents)  // contentsに記事一覧が入っている
+            setIsLoading(false)
+        })
+        .catch(() => {
+            setErrorMessage('取得に失敗しました')
+            setIsLoading(false)  // エラーのときも解除する
+        })
+}, [])
+```
+
+---
+
+---
+
+## 詳細ページ（1件取得）
+
+### 一覧取得と1件取得の違い
+
+```ts
+// 一覧取得
+client.get({ endpoint: 'blog' })
+    .then((response) => {
+        setBlogs(response.contents)  // contentsに配列が入っている
+    })
+
+// 1件取得
+client.get({ endpoint: 'blog', contentId: id })
+    .then((response) => {
+        setBlogArticle(response)  // responseそのものが1件の記事
+    })
+```
+
+---
+
+### Q. stateの初期値、配列とオブジェクトで何が違う？
+
+```ts
+// 一覧（配列）→ [] で初期化
+const [blogs, setBlogs] = useState<Blog[]>([])
+
+// 1件（オブジェクト）→ null で初期化
+const [blogArticle, setBlogArticle] = useState<Blog | null>(null)
+```
+
+オブジェクト1件のときは「まだ何もない」状態を `null` で表す。
+
+---
+
+### Q. `Blog | null` とは？
+
+`|` は「または」という意味。`Blog型` または `null` のどちらかが入る。
+
+```ts
+Blog | null
+// → 最初は null（まだ取得できていない）
+// → 取得後は Blog型のオブジェクトが入る
+```
+
+---
+
+### URLのパラメータを取得する（useParams）
+
+```ts
+import { useParams } from 'react-router'
+const { id } = useParams()
+// /blog/abc123 にアクセスすると id = 'abc123' になる
+```
+
+---
+
+### 型定義
+
+```ts
+type Blog = {
+    id: string
+    title: string
+    icon: string
+    body: string
+    thumb?: { url: string }  // 画像は { url: string } 型
+    date?: string            // 任意項目は ? を付ける
+}
+```
