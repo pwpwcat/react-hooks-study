@@ -2,17 +2,9 @@
 import { useEffect, useState, useRef } from 'react'
 import { client } from '@/lib/microcms'
 import { Link } from 'react-router'
+import type { Blog } from '@/types/blog'
 
 const Blog = () => {
-    type Blog = {
-        title: string
-        icon: string
-        body: string
-        thumb?: { url: string }
-        date?: string
-        id: string
-    }
-
     const [blogs, setBlogs] = useState<Blog[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [errorMessage, setErrorMessage] = useState('')
