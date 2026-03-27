@@ -1,8 +1,8 @@
-// import styles from './index.module.sass'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { client } from '@/lib/microcms'
 import { Link } from 'react-router'
 import type { Blog } from '@/types/blog'
+import styles from './index.module.sass'
 
 const Blog = () => {
     const [blogs, setBlogs] = useState<Blog[]>([])
@@ -26,18 +26,18 @@ const Blog = () => {
     }, [])
 
     return (
-        <div>
-            <h1>Blog</h1>
+        <div className={styles.blog}>
+            <h1 className={styles.blog__title}>Blog</h1>
             {errorMessage && <p>{errorMessage}</p>}
             {isLoading ? (
-                <p>ローディング中</p>
+                <p>読み込み中...</p>
             ) : (
-                <ul>
+                <ul className={styles.blog__list}>
                     {blogs.map((blog) => (
-                        <li key={blog.id}>
+                        <li key={blog.id} className={styles.blog__item}>
                             <Link to={`/blog/${blog.id}`}>
-                                <span>{blog.icon}</span>
-                                <p>{blog.title}</p>
+                                <span className={styles.blog__icon}>{blog.icon}</span>
+                                <p className={styles.blog__name}>{blog.title}</p>
                             </Link>
                         </li>
                     ))}

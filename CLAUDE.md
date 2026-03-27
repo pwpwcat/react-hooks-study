@@ -213,8 +213,25 @@
 
 ## 2026-03-26
 
-- microCMS + microcms-js-sdk を使ったブログ一覧・詳細ページの実装
-  → 一覧ページはほぼ自力で書けた。`isLoading` / `errorMessage` の管理、`Link` の使い方も自分で組み立てられた。
-  → 詳細ページは `useParams` が初めてだったがすぐ理解できた。1件取得と一覧取得の違い（`response` vs `response.contents`）は説明後に納得。
-  → `Blog | null` の型、`null` で初期化する理由も説明後すぐ理解できていた。
-  → 全体的にこれまでの知識を組み合わせて書けており、定着してきている。
+- Blog型を `src/types/blog.ts` に切り出してimportする形に変更
+- BlogShow（詳細ページ）を書き直し・リッチエディタの本文をHTMLとして表示
+- 前後の記事へのナビゲーション実装（findIndex / useEffectの依存配列にidを追加）
+  → `findIndex` は自分で調べて使えた。発想力が上がってきている。
+  → `useEffect` の依存配列に `id` を入れないとURLが変わっても再取得されない、という仕組みをすぐ理解できていた。
+  → `dangerouslySetInnerHTML` / `??` などの新しい構文も説明後すぐ納得できていた。
+
+## 2026-03-27
+
+- Blogページのスタイル調整
+- PrivateWorks（限定公開ページ）一覧の実装
+  → `isLoading` / `errorMessage` / `useState` の組み合わせはほぼ自力で書けた。着実に定着している。
+  → 画像表示（`works.image.url`）は型エラーで詰まったが、説明後すぐ理解できた。
+- パスワードゲートの実装
+  → `isAuthenticated` のtoggleパターンは自力で考えられた。
+  → `onKeyDown` + `e.key === 'Enter'` はボタンに付けてしまったが、inputに付けるべきという説明後すぐ理解・修正できた。
+- `.env` とAPIキーのセキュリティについての理解
+  → ビルド後にJSに含まれることは知らなかった。ドメイン制限の概念も説明後すぐ納得できた。
+- `AuthContext` を自作してページ遷移後も認証状態を保持
+  → jotai/Reduxとの関連性を自分から指摘できた（概念の繋がりが掴めてきている）。
+  → Contextファイルの作成・Providerでの囲み方・useContextの呼び出しをほぼ自力で書けた。動作確認も完了。
+  → `sessionStorage` / `localStorage` との使い分けも理解できていた。

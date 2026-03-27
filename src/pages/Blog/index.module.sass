@@ -1,0 +1,39 @@
+.blog
+    max-width: 800px
+    margin: 60px auto
+    padding: 0 24px
+
+    &__title
+        margin-bottom: 40px
+        padding-bottom: 16px
+        border-bottom: 1px solid var(--border)
+
+    &__list
+        display: flex
+        flex-direction: column
+        gap: 12px
+
+    &__item
+        a
+            display: flex
+            align-items: center
+            gap: 16px
+            padding: 20px 24px
+            background-color: var(--surface)
+            border: 1px solid var(--border)
+            border-radius: var(--radius)
+            transition: border-color var(--transition), background-color var(--transition)
+            color: var(--text)
+
+            &:hover
+                border-color: var(--primary)
+                background-color: var(--surface-2)
+
+    &__icon
+        font-size: 1.5rem
+        line-height: 1
+        flex-shrink: 0
+
+    &__name
+        font-size: 0.95rem
+        font-weight: 500

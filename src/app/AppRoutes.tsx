@@ -5,6 +5,8 @@ import About from '../pages/About'
 import Study from '../pages/Study'
 import Blog from '../pages/Blog'
 import BlogShow from '../pages/Blog/Show'
+import PrivateWorks from '../pages/PrivateWorks'
+import PrivateWorksShow from '../pages/PrivateWorks/Show'
 
 const AppRoutes = () => {
     return (
@@ -14,6 +16,8 @@ const AppRoutes = () => {
             <Route path="/study" element={<Study />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:id" element={<BlogShow />} />
+            <Route path="/private-works" element={<PrivateWorks />} />
+            <Route path="/private-works/:id" element={<PrivateWorksShow />} />
         </Routes>
     )
 }
