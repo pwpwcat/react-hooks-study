@@ -235,3 +235,12 @@
   → jotai/Reduxとの関連性を自分から指摘できた（概念の繋がりが掴めてきている）。
   → Contextファイルの作成・Providerでの囲み方・useContextの呼び出しをほぼ自力で書けた。動作確認も完了。
   → `sessionStorage` / `localStorage` との使い分けも理解できていた。
+
+## 2026-03-29
+
+- PokeAPIを使ったページャー実装（limit / offset / currentPage / Math.ceil / disabled）
+  → stateの設計（pokemons / isLoading / currentPage / count）はほぼ自力で書けた。
+  → `Math.ceil()` の使い方（メソッドではなく関数）は一度つまずいたがヒント後すぐ修正できた。
+  → `disabled` の条件（向きの考え方）は最初逆になったが説明後すぐ理解できた。
+  → 「currentPageを変えるとuseEffectが再実行されてURLが変わる」という仕組みを自分の言葉で説明できた。理解が深い。
+  → サーバーサイド / クライアントサイドのページネーションの違いも理解し、実務との関連を自分から結びつけて質問できていた。

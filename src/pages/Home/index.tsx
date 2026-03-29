@@ -1,44 +1,55 @@
 import styles from './index.module.sass'
 import { useEffect, useState, useRef } from 'react'
+
+type Pokemons = {
+    name: string
+    url: string
+}
 const Home = () => {
-    const [search, setSearch] = useState('')
-    const products = [
-        { id: 1, name: 'Tシャツ' },
-        { id: 2, name: 'ジーンズ' },
-        { id: 3, name: 'パーカー' },
-        { id: 4, name: 'スニーカー' },
-        { id: 5, name: 'キャップ' },
-        { id: 6, name: 'ジャケット' },
-    ]
-    const result = products.filter((product) =>
-        product.name.toLowerCase().includes(search.toLowerCase()),
-    )
+    const [pokemons, setPokemons] = useState<Pokemons[]>([])
+    const [isLoading, setIsLoading] = useState(false)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [count, setCount] = useState(0)
+    const total = Math.ceil(count / 10)
+
+    useEffect(() => {
+        setIsLoading(true)
+        fetch(
+            `https://pokeapi.co/api/v2/pokemon?limit=10&offset=${(currentPage - 1) * 10}`,
+        )
+            .then((response) => response.json())
+            .then((data) => {
+                setPokemons(data.results)
+                setCount(data.count)
+                setIsLoading(false)
+            })
+            .catch(() => {
+                setIsLoading(false)
+            })
+    }, [currentPage])
+
+    const handlePager = () => {
+        setCurrentPage(currentPage - 1)
+
+        console.log('‼️' + total)
+    }
     return (
         <div>
-            <h1>練習</h1>
-            <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-            />
-            {search && <p>{result.length}件見つかりました</p>}
+            <h1>ポケモン取得</h1>
             <ul>
-                {result.map((product) => (
-                    <li key={product.id}>
-                        {product.name.split(search).map((part, index) => (
-                            <>
-                                {part}
-                                {index <
-                                    product.name.split(search).length - 1 && (
-                                    <span style={{ color: 'red' }}>
-                                        {search}
-                                    </span>
-                                )}
-                            </>
-                        ))}
-                    </li>
+                {pokemons.map((pokemon) => (
+                    <li>{pokemon.name}</li>
                 ))}
             </ul>
+            <button disabled={1 === currentPage} onClick={handlePager}>
+                前へ
+            </button>
+            <button
+                disabled={total === currentPage}
+                onClick={() => setCurrentPage(currentPage + 1)}
+            >
+                次へ
+            </button>
         </div>
     )
 }
