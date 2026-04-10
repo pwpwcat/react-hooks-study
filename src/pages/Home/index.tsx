@@ -1,45 +1,67 @@
+import { useState } from 'react'
 import styles from './index.module.sass'
-import { useEffect, useState, useRef } from 'react'
+
 const Home = () => {
-    const [search, setSearch] = useState('')
-    const products = [
-        { id: 1, name: 'Tシャツ' },
-        { id: 2, name: 'ジーンズ' },
-        { id: 3, name: 'パーカー' },
-        { id: 4, name: 'スニーカー' },
-        { id: 5, name: 'キャップ' },
-        { id: 6, name: 'ジャケット' },
-    ]
-    const result = products.filter((product) =>
-        product.name.toLowerCase().includes(search.toLowerCase()),
-    )
+    type User = {
+        login: string
+        avatar_url: string
+        followers: number
+    }
+    const [inputName, setInputName] = useState('')
+    const [isLoading, setIsLoading] = useState(false)
+    const [users, setUsers] = useState<User | null>(null)
+    const [errorMessage, setErrorMessage] = useState('')
+
+    const handleSearch = () => {
+        setUsers(null)
+        setErrorMessage('')
+        setIsLoading(true)
+        fetch(`https://api.github.com/users/${inputName}`)
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.message) {
+                    setErrorMessage('ユーザーが見つかりませんでした')
+                    setIsLoading(false)
+                    return
+                } else {
+                    setIsLoading(false)
+                    setUsers(data)
+                }
+            })
+            .catch(() => {
+                setIsLoading(false)
+                setErrorMessage('取得に失敗しました')
+            })
+    }
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch()
+        }
+    }
     return (
         <div>
-            <h1>練習</h1>
+            <h1>Home</h1>
             <input
                 type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={inputName}
+                onChange={(e) => setInputName(e.target.value)}
+                onKeyDown={handleKeyDown}
             />
-            {search && <p>{result.length}件見つかりました</p>}
-            <ul>
-                {result.map((product) => (
-                    <li key={product.id}>
-                        {product.name.split(search).map((part, index) => (
-                            <>
-                                {part}
-                                {index <
-                                    product.name.split(search).length - 1 && (
-                                    <span style={{ color: 'red' }}>
-                                        {search}
-                                    </span>
-                                )}
-                            </>
-                        ))}
-                    </li>
-                ))}
-            </ul>
+            <button onClick={() => handleSearch()}>検索</button>
+            {errorMessage && <p>{errorMessage}</p>}
+            {isLoading ? (
+                '取得中'
+            ) : (
+                <div>
+                    <p>{users?.login}</p>
+                    <p>{users?.followers}</p>
+                    <div>
+                        <img src={users?.avatar_url} alt="" />
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
+
 export default Home

@@ -1,0 +1,98 @@
+## 💻 今日やったこと
+
+- GitHubユーザー検索アプリの実装（復習 + 新機能追加）
+  - テキスト入力 + ボタンで検索
+  - GitHub APIからユーザー情報（ユーザー名・アバター・フォロワー数）を取得
+  - `useEffect` ではなく関数（handleSearch）でfetchする形に変更
+  - 読み込み中・エラー時の表示
+  - エンターキーで検索できるようにした
+  - 2回目の検索時に前回の結果・エラーをリセット
+- GitHubレビューリクエスト管理サービスの準備
+  - Personal Access Token取得・.env設定
+  - `/review` ページ・ルーティング作成
+
+---
+
+## ✏️ 今日習ったこと
+
+### ボタンで検索する場合はuseEffectを使わない
+
+「ボタンを押したときだけ実行する」動きは、`useEffect` ではなく関数にして `onClick` で呼ぶ。
+
+```tsx
+// NG：useEffectだと最初に自動で走ってしまう
+useEffect(() => {
+    fetch(`https://api.github.com/users/${inputName}`)
+}, [])
+
+// OK：関数にしてボタンのonClickで呼ぶ
+const handleSearch = () => {
+    fetch(`https://api.github.com/users/${inputName}`)
+}
+<button onClick={() => handleSearch()}>検索</button>
+```
+
+---
+
+### 配列とオブジェクトの使い分け
+
+「複数？1つ？」で判断する。
+
+| | いつ使う | 初期値 |
+|---|---|---|
+| 配列 `[]` | 複数件のリスト（一覧） | `[]` |
+| オブジェクト `null` | 1件のデータ（詳細） | `null` |
+
+```tsx
+// 複数件（一覧）→ 配列
+const [users, setUsers] = useState<User[]>([])
+
+// 1件（詳細）→ オブジェクト
+const [user, setUser] = useState<User | null>(null)
+```
+
+---
+
+## 💡 質問コーナー
+
+### Q. 配列とオブジェクトが苦手
+
+「複数？1つ？」と考えると判断しやすい。
+
+- GitHubユーザー**一覧**検索 → 配列
+- GitHubユーザー**1人**取得 → オブジェクト（今回）
+
+ブログ一覧は配列、ブログ詳細は `null` 初期化のオブジェクト、というのと同じパターン。
+
+---
+
+### Q. GitHub APIは存在しないユーザーでも`.catch`に入らない？
+
+そうです。GitHub APIは404でも `.catch` に入らず、`.then` に `{ message: "Not Found" }` が返ってくる。なので `.then` の中で `data.message` を確認する必要がある。
+
+```tsx
+.then((data) => {
+    if (data.message) {
+        setErrorMessage('ユーザーが見つかりませんでした')
+        setIsLoading(false)
+        return
+    }
+    setIsLoading(false)
+    setUsers(data)
+})
+```
+
+---
+
+### Q. 2回目の検索で前回のエラーや結果が残る
+
+`handleSearch` の先頭でリセットする。
+
+```tsx
+const handleSearch = () => {
+    setUsers(null)         // 前回の結果をリセット
+    setErrorMessage('')    // 前回のエラーをリセット
+    setIsLoading(true)
+    ...
+}
+```

@@ -1,0 +1,164 @@
+## 💻 今日やったこと
+
+- Blog型を `src/types/blog.ts` に切り出してimportする形に変更
+- BlogShow（詳細ページ）を書き直し
+- リッチエディタの本文をHTMLとして表示
+- 前後の記事へのナビゲーション実装
+
+---
+
+## ✏️ 今日習ったこと
+
+### 型を別ファイルに切り出す
+
+複数ページで同じ型を使う場合はファイルに切り出してimportする。
+
+```tsx
+// src/types/blog.ts
+export interface Blog {
+    id: string
+    title: string
+    icon: string
+    body: string
+    thumb?: { url: string }
+    date?: string
+}
+
+// 使う側
+import type { Blog } from '@/types/blog'
+```
+
+---
+
+### `??`（Null合体演算子）
+
+「左が `null` または `undefined` だったら右を使う」という意味。
+
+```tsx
+blogShow?.body ?? ''
+// blogShow?.body が undefined だったら '' （空文字）を使う
+```
+
+`||` と似ているが、`||` は falsy（空文字・0・falseなど）全部に反応するのに対して、`??` は `null` と `undefined` だけに反応する。
+
+---
+
+### microCMSのリッチエディタをHTMLとして表示する
+
+`dangerouslySetInnerHTML` を使う。信頼できるソース（microCMSなど）からのHTMLにのみ使う。
+
+```tsx
+<div dangerouslySetInnerHTML={{ __html: blogShow?.body ?? '' }} />
+```
+
+---
+
+### 前後の記事へのナビゲーション
+
+全記事一覧を取得して、現在の記事が何番目かを調べて前後を取り出す。
+
+```tsx
+const currentIndex = blogLists.findIndex((a) => a.id === id)
+const prev = blogLists[currentIndex + 1]
+const next = blogLists[currentIndex - 1]
+```
+
+```tsx
+{prev ? <Link to={`/blog/${prev.id}`}>前へ</Link> : <div></div>}
+{next ? <Link to={`/blog/${next.id}`}>次へ</Link> : <div></div>}
+```
+
+---
+
+### `findIndex` とは？
+
+条件に合う要素の**番号（index）**を返すメソッド。
+
+```tsx
+const fruits = ['apple', 'banana', 'cherry']
+fruits.findIndex((fruit) => fruit === 'banana') // → 1
+```
+
+`find` は要素そのものを返すが、`findIndex` は番号を返す。
+
+```tsx
+blogLists.findIndex((a) => a.id === id)
+// → a.id で配列を1つずつ回して、id（現在の記事）と一致するものが何番目かを返す
+```
+
+---
+
+### `blogLists[currentIndex + 1]` の意味
+
+`配列[番号]` でその番号の要素が取れる。
+
+```tsx
+blogLists = [記事A, 記事B, 記事C, 記事D]
+//           0番    1番    2番    3番
+
+currentIndex = 2  // 今は記事C（2番）を表示中
+
+blogLists[currentIndex + 1]
+= blogLists[2 + 1]
+= blogLists[3]
+= 記事D  // → 次の記事
+```
+
+---
+
+## 💡 質問コーナー
+
+### Q. ページ表示直後と取得完了後の処理をちゃんと書かないといけない理由は？
+
+Reactはデータ取得前にも画面を描画しようとする。
+
+```
+① ページ表示（この時点ではデータがまだない → null）
+② APIからデータ取得中...
+③ データ取得完了 → stateに値が入り画面を更新
+```
+
+①の時点で `blogShow.title` を表示しようとすると `null` なのでエラーになる：
+
+```
+Cannot read properties of null (reading 'title')
+```
+
+なので `null` のときは表示しない処理が必要。
+
+```tsx
+if (!blogShow) return null
+// または
+if (isLoading) return <p>読み込み中...</p>
+```
+
+---
+
+### Q. 「まだ何もない」状態とは？取得前のこと？
+
+そうです。
+
+```tsx
+// 一覧（配列）→ [] で初期化できる（「要素0個」が表現できる）
+const [blogs, setBlogs] = useState<Blog[]>([])
+
+// 1件（オブジェクト）→ null で初期化
+const [blogArticle, setBlogArticle] = useState<Blog | null>(null)
+```
+
+オブジェクトは `{}` だと不完全な状態になるので、「まだ存在しない」を表す `null` を使う。
+
+---
+
+### Q. useEffectの依存配列に `id` を入れないといけない理由は？
+
+`id` が変わったらAPI読み込みの処理を走らせるため。
+
+```tsx
+useEffect(() => {
+    // idが変わるたびにここが実行される
+    client.get({ endpoint: 'blog', contentId: id })
+}, [id])  // ← idが変わるたびに再実行
+```
+
+`[]` のままだと最初の1回しか実行されないので、前後の記事に移動してURLの `id` が変わっても再取得されない。

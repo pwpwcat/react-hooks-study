@@ -1,0 +1,185 @@
+## 💻 今日やったこと
+
+- BlogページとBlogShowページにスタイルを当てた
+- PrivateWorks（限定公開ページ）の一覧ページを実装
+  - 画像の表示（`works.image.url`）
+  - パスワードゲートの実装
+  - エンターキーでボタン送信できるようにした
+- パスワードを外部から見えにくくする方法を学んだ
+- `AuthContext` を自作してページ遷移後も認証状態を保持できるようにした
+
+---
+
+## ✏️ 今日習ったこと
+
+### microCMSの画像を表示する
+
+microCMSの画像フィールドは `{ url: string }` というオブジェクト。`url` プロパティを取り出して使う。
+
+```tsx
+<img src={works.image.url} alt="" />
+```
+
+`works.image` を直接 `src` に渡すと表示されないので注意。
+
+---
+
+### パスワードゲートの実装パターン
+
+`isAuthenticated` というstateを持って、パスワードが合っていたら `true` にする。
+
+```tsx
+const [isAuthenticated, setIsAuthenticated] = useState(false)
+const [password, setPassword] = useState('')
+
+const handlePasswordCheck = () => {
+    if (password === '正しいパスワード') {
+        setIsAuthenticated(true)
+    } else {
+        setErrorMessage('パスワードが違います')
+    }
+}
+
+return (
+    <>
+        {!isAuthenticated ? (
+            // パスワード入力フォーム
+        ) : (
+            // 認証後に表示するコンテンツ
+        )}
+    </>
+)
+```
+
+---
+
+### エンターキーで送信できるようにする
+
+`onKeyDown` イベントを **input** に付ける（buttonではなく）。
+
+```tsx
+<input
+    type="password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    onKeyDown={(e) => {
+        if (e.key === 'Enter') handlePasswordCheck()
+    }}
+/>
+```
+
+`e.key` はどのキーが押されたかを表す文字列。`'Enter'` `'Escape'` `'ArrowUp'` などが使える。
+
+---
+
+### `.env` でシークレット情報を管理する（Vite）
+
+APIキーやパスワードをコードに直書きせず `.env` ファイルで管理する。
+
+```
+# .env
+VITE_API_KEY=xxxxxx
+VITE_PASSWORD=pasuwa-do
+```
+
+```tsx
+// コンポーネントで使う
+const apiKey = import.meta.env.VITE_API_KEY
+```
+
+Viteでは `VITE_` のプレフィックスが必須。`.env` は `.gitignore` に追加してGitHubに上げないようにする。
+
+**注意：** ビルドするとJSファイルに値が含まれるので、厳密には完全に隠せるわけではない。APIキーはmicroCMSのドメイン制限で保護するのがベター。
+
+---
+
+### `useContext` でグローバルなstateを管理する
+
+ページをまたいで同じstateを使いたいとき、`useContext` でグローバルに管理できる。
+
+#### 1. Contextファイルを作る
+
+```tsx
+// src/context/AuthContext.tsx
+import { createContext, useState, useContext } from 'react'
+
+type AuthContextType = {
+    isAuthenticated: boolean
+    setIsAuthenticated: (value: boolean) => void
+}
+
+export const AuthContext = createContext<AuthContextType>({
+    isAuthenticated: false,
+    setIsAuthenticated: () => {},
+})
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+    return (
+        <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
+            {children}
+        </AuthContext.Provider>
+    )
+}
+```
+
+#### 2. App全体をProviderで囲む
+
+```tsx
+// App.tsx
+import { AuthProvider } from '@/context/AuthContext'
+
+function App() {
+    return (
+        <AuthProvider>
+            {/* ルーティングなど */}
+        </AuthProvider>
+    )
+}
+```
+
+#### 3. 使いたいページでuseContextを呼ぶ
+
+```tsx
+import { useContext } from 'react'
+import { AuthContext } from '@/context/AuthContext'
+
+const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext)
+```
+
+---
+
+## 💡 質問コーナー
+
+### Q. パスワードをコードに書くとGitHubで見られてしまう？
+
+そうです。GitHubのパブリックリポジトリに上げるとコードが誰でも見られるので、パスワードやAPIキーは `.env` ファイルに書いて `.gitignore` に追加する。
+
+---
+
+### Q. `.env` に書いてもビルドしたらバレる？
+
+はい、Viteでビルドすると `.env` の値がJSファイルの中に含まれる。完全に隠す方法はサーバーサイドで処理すること。
+APIキーはmicroCMSのドメイン制限（特定のURLからのアクセスだけ許可）で保護するのが現実的。
+
+---
+
+### Q. ページ遷移したら `isAuthenticated` がリセットされてしまった。なぜ？
+
+コンポーネントの `useState` はそのコンポーネントがアンマウントされる（ページから離れる）とリセットされる。
+別ページに戻ってきたときに新しくコンポーネントが作られるのでstateも初期値（`false`）になる。
+
+解決策：`useContext` を使ってグローバルなstateにする。アプリ全体がアンマウントされない限りstateが保持される。
+
+---
+
+### Q. `sessionStorage` / `localStorage` との違いは？
+
+| | useContext | sessionStorage | localStorage |
+|---|---|---|---|
+| タブを閉じたらリセット | される | される | されない |
+| ページリロードしたらリセット | される | されない | されない |
+| ページ遷移したらリセット | されない | されない | されない |
+
+今回の実装（useContext）はリロードするとパスワード画面に戻る。リロードしても維持したい場合は `sessionStorage` を使う。

@@ -4,18 +4,21 @@ import AppRoutes from './AppRoutes'
 import '@/assets/stylesheets/global.sass'
 import { TodoProvider } from '@/context/TodoContext'
 import { ThemeProvider } from '@/context/ThemeContext'
+import { AuthProvider } from '@/context/AuthContext'
 
 const App = () => {
     return (
-        <TodoProvider>
-            <ThemeProvider>
-                <BrowserRouter>
-                    <RootLayout>
-                        <AppRoutes />
-                    </RootLayout>
-                </BrowserRouter>
-            </ThemeProvider>
-        </TodoProvider>
+        <AuthProvider>
+            <TodoProvider>
+                <ThemeProvider>
+                    <BrowserRouter>
+                        <RootLayout>
+                            <AppRoutes />
+                        </RootLayout>
+                    </BrowserRouter>
+                </ThemeProvider>
+            </TodoProvider>
+        </AuthProvider>
     )
 }
 

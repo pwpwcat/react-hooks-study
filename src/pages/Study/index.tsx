@@ -4,6 +4,7 @@ import TimerSection from './components/TimerSection'
 import ApiSection from './components/ApiSection'
 import RefSection from './components/RefSection'
 import FormSection from './components/FormSection'
+import PokemonSection from './components/PokemonSection'
 
 const Study = () => {
     return (
@@ -27,6 +28,7 @@ const Study = () => {
             <TodoSection />
             <TimerSection />
             <ApiSection />
+            <PokemonSection />
         </div>
     )
 }

@@ -1,0 +1,153 @@
+## 💻 今日やったこと
+
+- PokeAPIを使ったページャーの実装
+  - `limit` / `offset` でページネーション
+  - 「前へ」「次へ」ボタンの実装
+  - `disabled` で端のページでボタンを押せないようにした
+  - 総ページ数を `Math.ceil()` で計算
+
+---
+
+## ✏️ 今日習ったこと
+
+### ページネーションの仕組み（サーバーサイド）
+
+`limit`（1ページの件数）と `offset`（何件目から取得するか）をURLパラメーターに渡す。
+
+```
+1ページ目: ?limit=10&offset=0
+2ページ目: ?limit=10&offset=10
+3ページ目: ?limit=10&offset=20
+```
+
+`offset = (currentPage - 1) * limit` で計算できる。
+
+---
+
+### currentPageでページを制御する仕組み
+
+```
+① currentPage = 1（初期値）
+      ↓
+② useEffectが走る → offset=0 でAPI取得
+      ↓
+③ 「次へ」ボタンを押す → currentPage = 2
+      ↓
+④ currentPageが変わる → useEffectが再実行 → offset=10 でAPI取得
+      ↓
+⑤ 画面が更新される
+```
+
+`currentPage` を変えるだけで、useEffectが自動で動いてAPIを叩き直してくれる。
+
+```tsx
+const [currentPage, setCurrentPage] = useState(1)
+
+useEffect(() => {
+    fetch(`https://pokeapi.co/api/v2/pokemon?limit=10&offset=${(currentPage - 1) * 10}`)
+        .then((response) => response.json())
+        .then((data) => {
+            setPokemons(data.results)
+            setCount(data.count)
+        })
+}, [currentPage])  // ← currentPageが変わるたびに再実行
+```
+
+---
+
+### 素のfetchの書き方
+
+microCMSのときは `client.get()` が裏でやってくれていたが、外部APIでは `.then((response) => response.json())` が必要。
+
+```tsx
+fetch('URL')
+    .then((response) => response.json())  // レスポンスをJSONに変換
+    .then((data) => {
+        // dataを使う
+    })
+    .catch(() => {})
+```
+
+---
+
+### 総ページ数の計算（Math.ceil）
+
+`Math.ceil()` は切り上げの関数。
+
+```tsx
+const total = Math.ceil(count / 10)
+// count=1302, limit=10 → Math.ceil(130.2) → 131ページ
+```
+
+`Math.ceil(計算式)` という形で使う（メソッドではなく関数）。
+
+---
+
+### disabledで端のページを制御する
+
+`disabled` に条件を渡すとボタンを無効化できる。stateが変わるたびに条件が再評価される。
+
+```tsx
+// 前へ：1ページ目のとき押せない
+<button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+    前へ
+</button>
+
+// 次へ：最後のページのとき押せない
+<button disabled={currentPage === total} onClick={() => setCurrentPage(currentPage + 1)}>
+    次へ
+</button>
+```
+
+---
+
+### サーバーサイド vs クライアントサイドページネーション
+
+| | サーバーサイド | クライアントサイド |
+|---|---|---|
+| 方法 | APIに `limit` / `offset` を渡す | 全件取得してフロントで `slice()` する |
+| データ量 | 大量でもOK | 少量向き |
+| 通信 | ページごとに発生 | 最初の1回だけ |
+
+どちらか判断するにはブラウザのNetworkタブでAPIのリクエストURLを確認する。URLに `limit=` や `page=` などがついていればサーバーサイド。
+
+---
+
+## 💡 質問コーナー
+
+### Q. currentPageはURLを変えてページを操作してるってこと？
+
+そうです。`currentPage` のstateを変えると `useEffect` が再実行され、URLの `offset` の値が変わってAPIを叩き直す、という仕組み。
+
+---
+
+### Q. APIのjsonを見れば何が取得できるかわかる？
+
+そうです。JSONのレスポンスを見て型を決めるのが基本。
+
+今回のPokeAPIの一覧エンドポイントは：
+```json
+{
+  "count": 1302,
+  "results": [
+    { "name": "bulbasaur", "url": "https://..." },
+    ...
+  ]
+}
+```
+
+なので型は：
+```tsx
+type Pokemon = {
+    name: string
+    url: string
+}
+const [pokemons, setPokemons] = useState<Pokemon[]>([])
+const [count, setCount] = useState(0)
+```
+
+---
+
+### Q. 会社のアプリのページネーションはサーバーサイド？クライアントサイド？
+
+APIのリクエストURLを見ないと断言できない。Networkタブで確認するのが確実。画像が大量になりうる場合はサーバーサイドの可能性が高い。
